@@ -2,7 +2,7 @@ HOMEPAGE = "https://github.com/openbmc/pldm"
 LICENSE = "Apache-2.0"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=86d3f3a95c324c9479bd8986968f4327"
 SRC_URI = "git://github.com/openbmc/pldm;branch=master;protocol=https"
-SRCREV = "4bf3ed840f13c31720ffa7c255942f3836402f4f"
+SRCREV = "8bb94e2e642a5326b444d10f9b8e7b36e24b39f9"
 
 SUMMARY = "PLDM Stack"
 DESCRIPTION = "Implementation of the PLDM specifications"
@@ -17,9 +17,14 @@ DEPENDS += "phosphor-logging"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
-S = "${WORKDIR}/git"
+PACKAGE_BEFORE_PN:append = " pldmtool pldm-libs"
+RRECOMMENDS:${PN}:append = "pldmtool"
+
 SYSTEMD_SERVICE:${PN} += "pldmd.service"
-SYSTEMD_SERVICE:${PN} += "pldmSoftPowerOff.service"
+SYSTEMD_SERVICE:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'softoff', 'pldmSoftPowerOff.service', '', d)}"
+
+FILES:pldmtool = "${bindir}/pldmtool"
+FILES:pldm-libs = "${libdir}/lib*${SOLIBS}"
 
 inherit meson pkgconfig
 inherit systemd
@@ -28,8 +33,12 @@ PACKAGECONFIG[transport-mctp-demux] = "-Dtransport-implementation=mctp-demux"
 PACKAGECONFIG[transport-af-mctp] = "-Dtransport-implementation=af-mctp"
 PACKAGECONFIG[oem-ibm] = "-Doem-ibm=enabled, -Doem-ibm=disabled, , squashfs-tools"
 PACKAGECONFIG[oem-ampere] = "-Doem-ampere=enabled, -Doem-ampere=disabled, libcper"
+PACKAGECONFIG[oem-meta] = "-Doem-meta=enabled, -Doem-meta=disabled"
+PACKAGECONFIG[oem-nvidia] = "-Doem-nvidia=enabled, -Doem-nvidia=disabled"
 PACKAGECONFIG[system-specific-bios-json] = "-Dsystem-specific-bios-json=enabled, -Dsystem-specific-bios-json=disabled"
-PACKAGECONFIG ??= ""
+PACKAGECONFIG[fw-update-pkg-inotify] = "-Dfw-update-pkg-inotify=enabled, -Dfw-update-pkg-inotify=disabled"
+PACKAGECONFIG[softoff] = "-Dsoftoff=enabled, -Dsoftoff=disabled"
+PACKAGECONFIG ??= "softoff"
 PACKAGECONFIG:append:df-mctp = " transport-af-mctp"
 
 EXTRA_OEMESON = " \

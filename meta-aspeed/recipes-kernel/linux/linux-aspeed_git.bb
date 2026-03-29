@@ -1,5 +1,5 @@
-KBRANCH ?= "dev-6.6"
-LINUX_VERSION ?= "6.6.85"
+KBRANCH ?= "dev-6.18"
+LINUX_VERSION ?= "6.18.20"
 
 SRC_URI = "file://${TOPDIR}/downloads/git2/github.com.openbmc.linux;type=git;bareclone=1;branch=dev-6.6;nocheckout=1"
 

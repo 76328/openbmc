@@ -10,18 +10,24 @@ DEPENDS += " \
     phosphor-dbus-interfaces \
     phosphor-logging \
     "
-SRCREV = "6f9e7a7669efb430d43252a2bc8b9f7af5250332"
+SRCREV = "2589c8c15f6f4feea35655dcd69abb625d3df349"
+
 PACKAGECONFIG[smbios-no-dimm] = "-Ddimm-dbus=disabled,-Ddimm-dbus=enabled"
 PACKAGECONFIG[cpuinfo] = "-Dcpuinfo=enabled,-Dcpuinfo=disabled,i2c-tools"
 PACKAGECONFIG[cpuinfo-peci] = "-Dcpuinfo-peci=enabled,-Dcpuinfo-peci=disabled,libpeci"
 PACKAGECONFIG[smbios-ipmi-blob] = "-Dsmbios-ipmi-blob=enabled,-Dsmbios-ipmi-blob=disabled,phosphor-ipmi-blobs"
 PACKAGECONFIG[assoc-trim-path] = "-Dassoc-trim-path=enabled,-Dassoc-trim-path=disabled"
+PACKAGECONFIG[tpm-dbus] = "-Dtpm-dbus=enabled,-Dtpm-dbus=disabled"
+PACKAGECONFIG[firmware-inventory-dbus] = "-Dfirmware-inventory-dbus=enabled,-Dfirmware-inventory-dbus=disabled"
+PACKAGECONFIG[expose-firmware-component-name] = "-Dexpose-firmware-component-name=enabled,-Dexpose-firmware-component-name=disabled"
+PACKAGECONFIG[slot-drive-presence] = "-Dslot-drive-presence=enabled,-Dslot-drive-presence=disabled"
+PACKAGECONFIG[dimm-only-locator] = "-Ddimm-only-locator=enabled,-Ddimm-only-locator=disabled"
+
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
 SRC_URI = "git://github.com/openbmc/smbios-mdr.git;branch=master;protocol=https"
 
-S = "${WORKDIR}/git"
 SYSTEMD_SERVICE:${PN} += "smbios-mdrv2.service"
 SYSTEMD_SERVICE:${PN} += "${@bb.utils.contains('PACKAGECONFIG', 'cpuinfo', 'xyz.openbmc_project.cpuinfo.service', '', d)}"
 

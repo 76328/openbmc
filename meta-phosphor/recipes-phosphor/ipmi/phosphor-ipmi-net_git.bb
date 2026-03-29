@@ -17,7 +17,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=e3fc50a88d0a364313df4b21ef20c29e"
 DEPENDS += "cli11"
 DEPENDS += "systemd"
 DEPENDS += "phosphor-ipmi-host"
-SRCREV = "888f0d3e62dd690cecb103796a6a9f6b3f39c715"
+SRCREV = "ba6efc502e6b1fabb8ed1ca677ae5eedd64b6361"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
@@ -26,7 +26,6 @@ SRC_URI = "git://github.com/openbmc/phosphor-net-ipmid;branch=master;protocol=ht
            "
 
 
-S = "${WORKDIR}/git"
 # install parameterized service and socket files
 SYSTEMD_SERVICE:${PN} = " \
         ${PN}@${RMCPP_IFACE}.service \
