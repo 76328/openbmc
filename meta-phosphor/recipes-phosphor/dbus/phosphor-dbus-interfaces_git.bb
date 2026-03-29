@@ -15,6 +15,8 @@ SRC_URI = "git://github.com/openbmc/phosphor-dbus-interfaces;branch=master;proto
 
 S = "${WORKDIR}/git"
 
+
+
 inherit pkgconfig meson
 inherit obmc-phosphor-utils
 inherit phosphor-dbus-yaml
@@ -47,4 +49,5 @@ do_write_config:append() {
 # The write-config needs to happen after the unpack and patch steps.
 # Unpack is what creates the original source.  Someone could apply patches to
 # the repository that affects meson.options.
-do_write_config[depends] += "${PN}:do_unpack ${PN}:do_patch"
+# do_write_config[depends] += "${PN}:do_unpack ${PN}:do_patch"
+

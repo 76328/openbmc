@@ -21,7 +21,10 @@ SRCREV = "888f0d3e62dd690cecb103796a6a9f6b3f39c715"
 PV = "1.0+git${SRCPV}"
 PR = "r1"
 
-SRC_URI = "git://github.com/openbmc/phosphor-net-ipmid;branch=master;protocol=https"
+SRC_URI = "git://github.com/openbmc/phosphor-net-ipmid;branch=master;protocol=https \
+           file://0001-My-IPMI-NET-MOD.patch \
+           "
+
 
 S = "${WORKDIR}/git"
 # install parameterized service and socket files

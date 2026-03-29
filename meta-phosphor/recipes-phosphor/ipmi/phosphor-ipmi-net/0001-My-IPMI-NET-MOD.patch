@@ -1,0 +1,238 @@
+From f78d94fc50976743c8dcd38cd59952246fc83b21 Mon Sep 17 00:00:00 2001
+From: Your Name <763280032@qq.com>
+Date: Sat, 28 Mar 2026 23:37:43 +0800
+Subject: [PATCH] My IPMI NET MOD
+Upstream-Status: Inappropriate [embedded specific]
+
+---
+ .clang-format                             |  0
+ .clang-tidy                               |  0
+ .gitignore                                |  0
+ LICENSE                                   |  0
+ OWNERS                                    |  0
+ README.md                                 |  0
+ main.cpp                                  | 27 +++++++++++++
+ meson.build                               |  0
+ meson.options                             |  0
+ message_handler.cpp                       | 46 ++++++++++++++++++++++-
+ phosphor-ipmi-net@.service                |  0
+ phosphor-ipmi-net@.socket                 |  0
+ subprojects/CLI11.wrap                    |  0
+ subprojects/googletest.wrap               |  0
+ subprojects/phosphor-dbus-interfaces.wrap |  0
+ subprojects/phosphor-host-ipmid.wrap      |  0
+ subprojects/phosphor-logging.wrap         |  0
+ subprojects/sdbusplus.wrap                |  0
+ test/cipher.cpp                           |  0
+ test/meson.build                          |  0
+ 20 files changed, 72 insertions(+), 1 deletion(-)
+ mode change 100644 => 100755 .clang-format
+ mode change 100644 => 100755 .clang-tidy
+ mode change 100644 => 100755 .gitignore
+ mode change 100644 => 100755 LICENSE
+ mode change 100644 => 100755 OWNERS
+ mode change 100644 => 100755 README.md
+ mode change 100644 => 100755 meson.build
+ mode change 100644 => 100755 meson.options
+ mode change 100644 => 100755 phosphor-ipmi-net@.service
+ mode change 100644 => 100755 phosphor-ipmi-net@.socket
+ mode change 100644 => 100755 subprojects/CLI11.wrap
+ mode change 100644 => 100755 subprojects/googletest.wrap
+ mode change 100644 => 100755 subprojects/phosphor-dbus-interfaces.wrap
+ mode change 100644 => 100755 subprojects/phosphor-host-ipmid.wrap
+ mode change 100644 => 100755 subprojects/phosphor-logging.wrap
+ mode change 100644 => 100755 subprojects/sdbusplus.wrap
+ mode change 100644 => 100755 test/cipher.cpp
+ mode change 100644 => 100755 test/meson.build
+
+diff --git a/.clang-format b/.clang-format
+old mode 100644
+new mode 100755
+diff --git a/.clang-tidy b/.clang-tidy
+old mode 100644
+new mode 100755
+diff --git a/.gitignore b/.gitignore
+old mode 100644
+new mode 100755
+diff --git a/LICENSE b/LICENSE
+old mode 100644
+new mode 100755
+diff --git a/OWNERS b/OWNERS
+old mode 100644
+new mode 100755
+diff --git a/README.md b/README.md
+old mode 100644
+new mode 100755
+diff --git a/main.cpp b/main.cpp
+index a1427ca..88747d0 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -25,6 +25,8 @@
+ 
+ #include <tuple>
+ 
++
++
+ static auto io = std::make_shared<boost::asio::io_context>();
+ std::shared_ptr<boost::asio::io_context> getIo()
+ {
+@@ -70,6 +72,25 @@ EInterfaceIndex getInterfaceIndex(void)
+     return currentInterfaceIndex;
+ }
+ 
++//w25319
++
++void backgroundLoggerThread()
++{
++    while (true)
++    {
++        sd_journal_print(LOG_INFO, 
++            "NetIPMI Background Thread: Active (Timestamp=%lld)", 
++            static_cast<long long>(std::time(nullptr)));
++
++        for (int i = 0; i < 5 ; ++i) {
++            std::this_thread::sleep_for(std::chrono::seconds(1));
++        }
++    }
++    sd_journal_print(LOG_INFO, "NetIPMI Background Thread: Exited");
++}
++
++//end
++
+ int main(int argc, char* argv[])
+ {
+     CLI::App app("KCS RMCP+ bridge");
+@@ -113,6 +134,11 @@ int main(int argc, char* argv[])
+     // Register the phosphor-net-ipmid SOL commands
+     sol::command::registerCommands();
+ 
++    //w25319
++    std::thread loggerThread(backgroundLoggerThread);
++    loggerThread.detach();
++    //end
++
+     if (loop.setupSocket(sdbusp, channel))
+     {
+         return EXIT_FAILURE;
+@@ -121,3 +147,4 @@ int main(int argc, char* argv[])
+     // Start Event Loop
+     return loop.startEventLoop();
+ }
++// My modification
+diff --git a/meson.build b/meson.build
+old mode 100644
+new mode 100755
+diff --git a/meson.options b/meson.options
+old mode 100644
+new mode 100755
+diff --git a/message_handler.cpp b/message_handler.cpp
+index b7365bb..afd2b9f 100644
+--- a/message_handler.cpp
++++ b/message_handler.cpp
+@@ -22,9 +22,31 @@ bool Handler::receive()
+     std::vector<uint8_t> packet;
+     auto readStatus = 0;
+ 
++    //w25319
++    lg2::info("w25319 before in message payload");
++    /*for (unsigned int j = 0;j < inMessage->payload.size();j++)
++    {
++        lg2::info("data: {D}","D",lg2::hex,inMessage->payload[j]);
++    }*/
++    if (inMessage==nullptr)
++    {
++        //lg2::info("size: {D}","D",lg2::hex,inMessage->payload.size());
++        lg2::info("null");
++    }
++    //w25319
+     // Read the packet
+     std::tie(readStatus, packet) = channel->read();
+ 
++    //w25319
++    /*unsigned int mypacketsize = packet.size();
++    unsigned int i = 0;
++    std::vector<uint8_t> mypacket(packet);
++    lg2::info("w25319 lan recv");
++    for (;i<mypacketsize;i++)
++    {
++        lg2::info("data :{D}","D",lg2::hex,mypacket[i]);
++    }*/
++    //w25319
+     // Read of the packet failed
+     if (readStatus < 0)
+     {
+@@ -35,6 +57,14 @@ bool Handler::receive()
+     // Unflatten the packet
+     std::tie(inMessage, sessionHeader) = parser::unflatten(packet);
+ 
++    //w25319
++    lg2::info("w25319 in message payload");
++    for (unsigned int j = 0;j < inMessage->payload.size();j++)
++    {
++        lg2::info("data: {D}","D",lg2::hex,inMessage->payload[j]);
++    }
++    //w25319
++
+     return true;
+ }
+ 
+@@ -90,7 +120,7 @@ void Handler::processIncoming()
+     {
+         return;
+     }
+-
++    lg2::info("w25319 process incoming");
+ #ifdef RMCP_PING
+     // Execute the Command, possibly asynchronously
+     if (inMessage && (ClassOfMsg::ASF != inMessage->rmcpMsgClass))
+@@ -124,6 +154,20 @@ void Handler::executeCommand()
+                          sizeof(LAN::header::Request);
+             auto end = inMessage->payload.end() - sizeof(LAN::trailer::Request);
+             std::vector<uint8_t> inPayload(start, end);
++
++            //w25319
++            unsigned int idx = 0;
++            std::vector<uint8_t> mypayload(start,end);
++            unsigned int mysize = mypayload.size();
++            command::CommandID mycommand(command);
++            lg2::info("w25319 executeCommand cmd netdn:{N} cmd:{C}","N",lg2::hex,mycommand.netFn()
++            ,"C",lg2::hex,mycommand.cmd());
++            for (;idx<mysize;idx++)
++            {
++                lg2::info("data {D}","D",lg2::hex,mypayload[idx]);
++            }
++            //w25319
++
+             command::Table::get().executeCommand(command, inPayload,
+                                                  shared_from_this());
+         }
+diff --git a/phosphor-ipmi-net@.service b/phosphor-ipmi-net@.service
+old mode 100644
+new mode 100755
+diff --git a/phosphor-ipmi-net@.socket b/phosphor-ipmi-net@.socket
+old mode 100644
+new mode 100755
+diff --git a/subprojects/CLI11.wrap b/subprojects/CLI11.wrap
+old mode 100644
+new mode 100755
+diff --git a/subprojects/googletest.wrap b/subprojects/googletest.wrap
+old mode 100644
+new mode 100755
+diff --git a/subprojects/phosphor-dbus-interfaces.wrap b/subprojects/phosphor-dbus-interfaces.wrap
+old mode 100644
+new mode 100755
+diff --git a/subprojects/phosphor-host-ipmid.wrap b/subprojects/phosphor-host-ipmid.wrap
+old mode 100644
+new mode 100755
+diff --git a/subprojects/phosphor-logging.wrap b/subprojects/phosphor-logging.wrap
+old mode 100644
+new mode 100755
+diff --git a/subprojects/sdbusplus.wrap b/subprojects/sdbusplus.wrap
+old mode 100644
+new mode 100755
+diff --git a/test/cipher.cpp b/test/cipher.cpp
+old mode 100644
+new mode 100755
+diff --git a/test/meson.build b/test/meson.build
+old mode 100644
+new mode 100755
